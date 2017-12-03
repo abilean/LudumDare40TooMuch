@@ -6,6 +6,13 @@ using System;
 public class GameManager : Singleton<GameManager>
 {
 
+    public enum Items 
+    {
+        Keys,
+        Wallet,
+        Phone
+    };
+
     /// <summary>
     /// The actual score, do not access variable directly, Use Score
     /// </summary>
@@ -25,15 +32,18 @@ public class GameManager : Singleton<GameManager>
     /// </summary>
     private int _level = 0;
 
+    [SerializeField]
+    private CutsceneController _cutscene;
+
     /// <summary>
     /// Dictionary of the items to look for and if they have been found
     /// Value = true when found
     /// </summary>
-    private Dictionary<string, bool> _itemsFound = new Dictionary<string, bool>()
+    private Dictionary<Items, bool> _itemsFound = new Dictionary<Items, bool>()
     {
-        {"Keys",false },
-        {"Wallet", false },
-        {"Phone", false }
+        {Items.Keys,false },
+        {Items.Wallet, false },
+        {Items.Phone, false }
     };
 
 
@@ -49,7 +59,10 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-
+    public bool IsPaused
+    {
+        get { return _paused; }
+    }
 
     public int Level
     {
@@ -83,22 +96,12 @@ public class GameManager : Singleton<GameManager>
     /// </summary>
     public Action<bool> OnGamePausedChg = delegate { };
 
-    //TODO: cut this down with an enum or something, shouldn't have each things listed
-
     /// <summary>
-    /// Thrown when player clicks the keys
+    /// Thrown when player clicks an Item is clicked
     /// </summary>
-    public Action OnKeysClicked = delegate { };
+    public Action<Items> OnItemClicked = delegate { };
 
-    /// <summary>
-    /// Thrown when player clicks the wallet
-    /// </summary>
-    public Action OnWalletClicked = delegate { };
 
-    /// <summary>
-    /// Thrown when player clicks the phone
-    /// </summary>
-    public Action OnPhoneClicked = delegate { };
 
     protected GameManager()
     {
@@ -127,43 +130,21 @@ public class GameManager : Singleton<GameManager>
         Score -= amount;
     }
 
-
-
-    /// <summary>
-    /// Causes OnKeysClicked to be thrown
-    /// </summary>
-    public void KeysClicked()
+    public void ItemClicked(Items item)
     {
-        if (OnKeysClicked != null)
-            OnKeysClicked();
+        if (OnItemClicked != null)
+            OnItemClicked(item);
 
-        _itemsFound["Keys"] = true;
+        _itemsFound[item] = true;
 
         if (CheckWinRound())
-           StartCoroutine( ChangeLevelWithCutScene(Level + 1,_sceneChangeDelay));
-    }
-
-    public void WalletClicked()
-    {
-        if (OnWalletClicked != null)
-            OnWalletClicked();
-
-        _itemsFound["Wallet"] = true;
-
-        if (CheckWinRound())
+        {
+            _cutscene.StartCutscene();
             StartCoroutine(ChangeLevelWithCutScene(Level + 1, _sceneChangeDelay));
+        }
     }
 
-    public void PhoneClicked()
-    {
-        if (OnPhoneClicked != null)
-            OnPhoneClicked();
 
-        _itemsFound["Phone"] = true;
-
-        if (CheckWinRound())
-            StartCoroutine(ChangeLevelWithCutScene(Level + 1, _sceneChangeDelay));
-    }
 
 
     /// <summary>
@@ -222,9 +203,11 @@ public class GameManager : Singleton<GameManager>
     private void InitNewLevel()
     {
         Time.timeScale = 1;
-        _itemsFound["Keys"] = false;
-        _itemsFound["Wallet"] = false;
-        _itemsFound["Phone"] = false;
+
+        _itemsFound[Items.Keys] = false;
+        _itemsFound[Items.Phone] = false;
+        _itemsFound[Items.Wallet] = false;
+        
     }
 
     /// <summary>
@@ -234,9 +217,14 @@ public class GameManager : Singleton<GameManager>
     /// <param name="delay">The time to delay before executing</param>
     private IEnumerator ChangeLevelWithCutScene(int lvl, float delay)
     {
-        //TODO: Add Cutscene
-        yield return new WaitForSeconds(delay);
+      
+        while (_cutscene.IsPlaying)
+        {
+            yield return new WaitForSeconds(0.1f);
+                
+        }
         Level = lvl;
+
     }
 
 }

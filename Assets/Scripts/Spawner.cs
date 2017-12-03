@@ -26,6 +26,26 @@ public class Spawner : MonoBehaviour {
     private void Awake()
     {
         GameManager.Instance.OnLevelChanged += HandleLevelChange;
+        GameManager.Instance.OnGamePausedChg += HandleGamePause;
+    }
+
+
+    private void HandleGamePause(bool paused)
+    {
+        if (paused)
+        {
+            for(int i = 0; i< transform.childCount; i++)
+            {
+                this.transform.GetChild(i).gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                this.transform.GetChild(i).gameObject.SetActive(true);
+            }
+        }
     }
 
     
@@ -46,10 +66,6 @@ public class Spawner : MonoBehaviour {
         Spawn(_phonePrefab, "KeyObj", -30);
 	}
 	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 
     /// <summary>
     /// creates random prefabs in random places on the screen area 
